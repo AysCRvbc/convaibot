@@ -22,10 +22,15 @@ class Message:
         self.is_dm = event.message['from_id'] == event.message['peer_id']
         self.time = event.message['date']
 
-    def answer(self, text, reply=False):
+    def answer(self, text, reply=False, dm=False):
+        chat = self.event.message['peer_id']
+        if dm:
+            chat = self.from_id
+            reply = False
+
         kwargs = {"reply_to": self.message_id} if reply else {}
         self.bot.vk.messages.send(
-            peer_id=self.event.message['peer_id'],
+            peer_id=chat,
             random_id=random.randint(-2147483648, 2147483647),
             message=text,
             **kwargs
@@ -43,6 +48,7 @@ class Bot:
 
         self.commands: list[Command] = []
         self.default_command = None
+        self.admin_check = None
 
     def set_config(self, config):
         self.token = config.token
@@ -56,7 +62,7 @@ class Bot:
         self.vk = self.vk_session.get_api()
         self.longpoll = VkBotLongPoll(self.vk_session, self.group_id)
 
-    def command(self, name: str, aliases=None, enable_dm=True, enable_gm=True, regex=False):
+    def command(self, name: str, aliases=None, enable_dm=True, enable_gm=True, regex=False, admin=False):
         if aliases is None:
             aliases = []
 
@@ -68,7 +74,8 @@ class Bot:
                                          enable_dm=enable_dm,
                                          enable_gm=enable_gm,
                                          regex=regex,
-                                         handler=func
+                                         handler=func,
+                                         admin=admin
                                          )
                                  )
 
@@ -78,6 +85,8 @@ class Bot:
         for event in self.longpoll.listen():
             if event.type == VkBotEventType.MESSAGE_NEW:
                 msg = Message(self, event)
+                cmd = None
+
                 for cmd in self.commands:
                     is_dm = msg.is_dm
 
@@ -87,16 +96,25 @@ class Bot:
                         continue
 
                     if cmd.is_call(msg.text):
-                        cmd.handler(msg)
                         break
                 else:
+                    if not msg.is_dm:
+                        continue
                     if self.default_command is not None:
                         cmd: Command = self.default_command
-                        cmd.handler(msg)
+
+                if cmd is None:
+                    continue
+
+                if cmd.admin:
+                    if not self.admin_check(msg):
+                        continue
+
+                cmd.handler(msg)
 
 
 class Command:
-    def __init__(self, name, handler, aliases=None, enable_dm=True, enable_gm=True, regex=False):
+    def __init__(self, name, handler, aliases=None, enable_dm=True, enable_gm=True, regex=False, admin=False):
         if aliases is None:
             aliases = []
         self.names = [name] + aliases
@@ -104,6 +122,7 @@ class Command:
         self.regex = regex
         self.enable_dm = enable_dm
         self.enable_gm = enable_gm
+        self.admin = admin
 
     def is_call(self, text):
         if not self.regex:
