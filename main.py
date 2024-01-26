@@ -32,7 +32,7 @@ def start():
     vk.set_config(bot_config)
     vk.auth()
 
-    while True:
+    while vk.working:
         try:
             vk.start()
         except Exception as e:

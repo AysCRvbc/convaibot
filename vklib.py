@@ -17,6 +17,10 @@ class Message:
 
         self.text = event.message['text']
         self.message_id = event.message['id']
+        self.from_id = event.message['from_id']
+        self.peer_id = event.message['peer_id']
+        self.is_dm = event.message['from_id'] == event.message['peer_id']
+        self.time = event.message['date']
 
     def answer(self, text, reply=False):
         kwargs = {"reply_to": self.message_id} if reply else {}
@@ -35,13 +39,17 @@ class Bot:
         self.vk_session = None
         self.vk = None
         self.longpoll = None
+        self.working = True
 
-        self.commands = []
+        self.commands: list[Command] = []
         self.default_command = None
 
     def set_config(self, config):
         self.token = config.token
         self.group_id = config.group_id
+
+    def stop(self):
+        self.working = False
 
     def auth(self):
         self.vk_session = vk_api.VkApi(token=self.token)
@@ -71,12 +79,20 @@ class Bot:
             if event.type == VkBotEventType.MESSAGE_NEW:
                 msg = Message(self, event)
                 for cmd in self.commands:
+                    is_dm = msg.is_dm
+
+                    if is_dm and not cmd.enable_dm:
+                        continue
+                    if not is_dm and not cmd.enable_gm:
+                        continue
+
                     if cmd.is_call(msg.text):
                         cmd.handler(msg)
                         break
                 else:
                     if self.default_command is not None:
-                        self.default_command(msg)
+                        cmd: Command = self.default_command
+                        cmd.handler(msg)
 
 
 class Command:
