@@ -48,9 +48,21 @@ class Bot:
         self.vk = self.vk_session.get_api()
         self.longpoll = VkBotLongPoll(self.vk_session, self.group_id)
 
-    def command(self, *args, **kwargs):
+    def command(self, name: str, aliases=None, enable_dm=True, enable_gm=True, regex=False):
+        if aliases is None:
+            aliases = []
+
+        args = name
+
         def wrapper(func):
-            self.commands.append(Command(*args, **kwargs, handler=func))
+            self.commands.append(Command(name=args,
+                                         aliases=aliases,
+                                         enable_dm=enable_dm,
+                                         enable_gm=enable_gm,
+                                         regex=regex,
+                                         handler=func
+                                         )
+                                 )
 
         return wrapper
 
