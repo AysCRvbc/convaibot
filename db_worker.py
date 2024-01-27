@@ -1,9 +1,13 @@
+import os
 import sqlite3
 import json
+
 
 class BotDatabase:
     def __init__(self, path):
         self.path = path
+        if not os.path.exists("data"):
+            os.mkdir("data")
         self.connection = sqlite3.connect(self.path)
         self.cursor = self.connection.cursor()
         self.create_tables()
@@ -66,7 +70,6 @@ class BotDatabase:
         ''', (bind_id,))
         return self.cursor.fetchall()
 
-
     def insert_json_message(self, conversation_id, json_message):
         self.cursor.execute('''
             INSERT INTO messages (conversation_id, message_json)
@@ -81,8 +84,6 @@ class BotDatabase:
         ''', (conversation_id,))
         messages_data = self.cursor.fetchall()
         return [json.loads(message[0]) for message in messages_data]
-
-
 
     def close(self):
         self.connection.close()

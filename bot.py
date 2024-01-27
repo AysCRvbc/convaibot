@@ -1,3 +1,5 @@
+import random
+
 import vklib
 import db_worker
 import prompts
@@ -13,8 +15,10 @@ def get_bot():
 OWNER = 540888551
 MESSAGES_SCAN_LIMIT = 100
 
+
 def owner_check(msg: vklib.Message):
     return msg.from_id == OWNER
+
 
 vk.admin_check = owner_check
 
@@ -36,7 +40,7 @@ def conv_list(msg: vklib.Message):
         msg.answer(f"Ваши беседы: {''.join([str(c) for c in convs])} \n\nВсего бесед: {len(convs)}")
 
 
-def get_messages(msg: vklib.Message):
+def get_messages(msg: vklib.Message, limit=MESSAGES_SCAN_LIMIT, minimum=10):
     chat = msg.peer_id
     if msg.is_dm:
         chat = int(msg.text.split(' ', 1)[1])
@@ -46,9 +50,9 @@ def get_messages(msg: vklib.Message):
 
     messages = db.get_all_messages_for_conversation(chat)
     messages.sort(key=lambda x: x['date'])
-    messages = messages[1-MESSAGES_SCAN_LIMIT:]
+    messages = messages[1 - limit:]
 
-    if len(messages) < 10:
+    if len(messages) < minimum:
         msg.answer("Недостаточно сообщений", reply=True)
         return False
 
@@ -77,8 +81,9 @@ def conv_request(msg: vklib.Message):
     if messages is False:
         return
 
-    answer = prompts.request(messages)
     vk.vk.messages.setActivity(type='typing', user_id=msg.from_id)
+    answer = prompts.request(messages)
+
     msg.answer(answer, dm=True)
 
 
@@ -88,9 +93,46 @@ def conv_description(msg: vklib.Message):
     if messages is False:
         return
 
-    answer = prompts.rate(messages)
     vk.vk.messages.setActivity(type='typing', user_id=msg.from_id)
+    answer = prompts.rate(messages)
+
     msg.answer(answer, dm=True)
+
+
+@vk.command("=ответ", enable_gm=True, enable_dm=True, admin=True)
+def conv_answer(msg: vklib.Message):
+    nickname = msg.text.split(' ', 1)[1].lower()
+    if not nickname:
+        msg.answer("Нужно указать имя \n(Пример - =ответь Стас Стасов)")
+        return
+
+    messages = get_messages(msg, limit=1000, minimum=10)
+    if messages is False:
+        return
+
+    center = []
+
+    for m in messages:
+        text = m['text']
+        nick = text.split(':', 1)[0].lower()
+        if nick == nickname:
+            center.append(m)
+
+    random.shuffle(center)
+    center = center[:75]
+    messages = messages[-15:]
+
+    if len(center) == 0:
+        msg.answer("Пользователь не найден")
+        return
+
+    vk.vk.messages.setActivity(type='typing', user_id=msg.peer_id)
+    answer = prompts.impersonate(messages, center)
+
+    if "<ans>" not in answer:
+        msg.answer("Произошла ошибка. Попробуйте позже")
+    answer = answer.split("<ans>", 1)[1].split("</ans>")[0]
+    msg.answer(answer)
 
 
 @vk.command("=стоп", enable_gm=True, enable_dm=True, admin=True)

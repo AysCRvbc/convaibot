@@ -126,7 +126,9 @@ class Command:
 
     def is_call(self, text):
         if not self.regex:
-            return text.split()[0] in self.names
+            for name in self.names:
+                if text.lower().startswith(name.lower()):
+                    return True
         else:
             for name in self.names:
                 if re.match(name, text):

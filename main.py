@@ -7,8 +7,6 @@ import vklib
 def start():
     if not os.path.exists("config"):
         os.mkdir("config")
-    if not os.path.exists("data"):
-        os.mkdir("data")
     if not os.path.exists("config/config.json"):
         config = {
             "token": None,

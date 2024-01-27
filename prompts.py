@@ -15,6 +15,7 @@ def request(messages):
         "text": "\n".join([m["text"] for m in messages])
     }
 
+
 @gpt.prompt
 def rate(messages):
     return {
@@ -26,3 +27,20 @@ def rate(messages):
                           "Список сообщений:\n",
         "text": "\n".join([m["text"] for m in messages])
     }
+
+
+@gpt.prompt
+def impersonate(messages, target_messages):
+    system_context = ("ОЧЕНЬ ВАЖНО: Ты чат-бот, задача которого - имитация персонажей из чата. "
+                      "Тебе нужно проанализировать стиль речи указанного участника, после чего выдать то, что бы мог написать этот персонаж в текущих событиях чата"
+                      "Теперь проанализируй сообщения того, кого тебе нужно спародиовать:"
+                      "\n" + "\n".join([m["text"] for m in target_messages]) + "\n"
+                      )
+    text = ("ЧАТ СЕЙЧАС: "
+            "" + "\n".join([m["text"] for m in messages]) + "\n"
+                                                            "В ответе перечисли сообщения, которые являются \"Стандартом\"."
+                                                            "Опирайся на них. Пробуй понять характер персонажа"
+                                                            "В конце своего ответа сгенерируй сообщение, которое сказал бы тот, кого ты пародируешь"
+                                                            "Это сообщение должно быть в формате <ans>{message}</ans>")
+
+    return {"system_context": system_context, "text": text}
