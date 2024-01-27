@@ -115,7 +115,7 @@ def conv_answer(msg: vklib.Message):
         msg.answer("Нужно указать имя \n(Пример - =ответь Стас Стасов)")
         return
 
-    messages = get_messages(msg, limit=1000, minimum=10, arg_i=3)
+    messages = get_messages(msg, limit=300, minimum=10, arg_i=3)
     if messages is False:
         return
 
@@ -128,8 +128,8 @@ def conv_answer(msg: vklib.Message):
             center.append(m)
 
     random.shuffle(center)
-    center = center[:75]
-    messages = messages[-15:]
+    center = center[:20]
+    messages = messages[-20:]
 
     if len(center) == 0:
         msg.answer("Пользователь не найден")
@@ -138,7 +138,7 @@ def conv_answer(msg: vklib.Message):
     vk.vk.messages.setActivity(type='typing', user_id=msg.peer_id)
 
     try:
-        answer = prompts.impersonate(messages, center)
+        answer = prompts.impersonate(messages, center, nickname)
     except:
         msg.answer("Мне лень читать, давайте позже")
         return
@@ -170,7 +170,7 @@ def conv_msg(msg: vklib.Message):
         'last_name']
 
     message = {
-        "text": user_name + ": " + msg.text,
+        "text": user_name + ": " + msg.text[:255],
         "date": msg.time
     }
 

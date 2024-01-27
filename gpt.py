@@ -3,8 +3,7 @@ import g4f
 
 def get_resp(system_context, text):
     response = g4f.ChatCompletion.create(
-        model=g4f.models.default,
-        provider=g4f.Provider.GeekGpt,
+        model=g4f.models.gpt_35_long,
         messages=[{"role": "user", "content": system_context}, {"role": "user", "content": text}],
     )
     return response
