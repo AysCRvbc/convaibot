@@ -5,9 +5,10 @@ import random
 
 
 class BotConfig:
-    def __init__(self, token, group_id):
+    def __init__(self, token, group_id, owners):
         self.token = token
         self.group_id = group_id
+        self.owners = owners
 
 
 class Message:
@@ -39,6 +40,7 @@ class Message:
 
 class Bot:
     def __init__(self):
+        self.owners = None
         self.token = None
         self.group_id = None
         self.vk_session = None
@@ -53,6 +55,7 @@ class Bot:
     def set_config(self, config):
         self.token = config.token
         self.group_id = config.group_id
+        self.owners = config.owners
 
     def stop(self):
         self.working = False

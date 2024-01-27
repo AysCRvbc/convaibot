@@ -12,12 +12,11 @@ def get_bot():
     return vk
 
 
-OWNER = 540888551
 MESSAGES_SCAN_LIMIT = 100
 
 
 def owner_check(msg: vklib.Message):
-    return msg.from_id == OWNER
+    return str(msg.from_id) in vk.owners
 
 
 vk.admin_check = owner_check
@@ -40,10 +39,10 @@ def conv_list(msg: vklib.Message):
         msg.answer(f"Ваши беседы: {''.join([str(c) for c in convs])} \n\nВсего бесед: {len(convs)}")
 
 
-def get_messages(msg: vklib.Message, limit=MESSAGES_SCAN_LIMIT, minimum=10):
+def get_messages(msg: vklib.Message, limit=MESSAGES_SCAN_LIMIT, minimum=10, arg_i=1):
     chat = msg.peer_id
     if msg.is_dm:
-        chat = int(msg.text.split(' ', 1)[1])
+        chat = int(msg.text.split(' ', arg_i)[arg_i])
         if not db.exists_conversation_by_id(chat):
             msg.answer("Беседа не найдена")
             return False
@@ -82,9 +81,14 @@ def conv_request(msg: vklib.Message):
         return
 
     vk.vk.messages.setActivity(type='typing', user_id=msg.from_id)
-    answer = prompts.request(messages)
 
-    msg.answer(answer, dm=True)
+    try:
+        answer = prompts.request(messages)
+    except:
+        msg.answer("Мне лень читать, давайте позже")
+        return
+
+    msg.answer(answer, reply=True)
 
 
 @vk.command("=опиши", enable_gm=True, enable_dm=True, admin=True)
@@ -94,19 +98,24 @@ def conv_description(msg: vklib.Message):
         return
 
     vk.vk.messages.setActivity(type='typing', user_id=msg.from_id)
-    answer = prompts.rate(messages)
+    try:
+        answer = prompts.rate(messages)
+    except:
+        msg.answer("Мне лень читать, давайте позже")
+        return
 
     msg.answer(answer, dm=True)
 
 
 @vk.command("=ответ", enable_gm=True, enable_dm=True, admin=True)
 def conv_answer(msg: vklib.Message):
-    nickname = msg.text.split(' ', 1)[1].lower()
+    nickname = msg.text.split(' ', 3)
+    nickname = f"{nickname[1]} {nickname[2]}".lower()
     if not nickname:
         msg.answer("Нужно указать имя \n(Пример - =ответь Стас Стасов)")
         return
 
-    messages = get_messages(msg, limit=1000, minimum=10)
+    messages = get_messages(msg, limit=1000, minimum=10, arg_i=3)
     if messages is False:
         return
 
@@ -127,10 +136,16 @@ def conv_answer(msg: vklib.Message):
         return
 
     vk.vk.messages.setActivity(type='typing', user_id=msg.peer_id)
-    answer = prompts.impersonate(messages, center)
+
+    try:
+        answer = prompts.impersonate(messages, center)
+    except:
+        msg.answer("Мне лень читать, давайте позже")
+        return
 
     if "<ans>" not in answer:
         msg.answer("Произошла ошибка. Попробуйте позже")
+
     answer = answer.split("<ans>", 1)[1].split("</ans>")[0]
     msg.answer(answer)
 

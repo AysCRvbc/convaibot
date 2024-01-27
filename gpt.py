@@ -9,6 +9,7 @@ def get_resp(system_context, text):
     )
     return response
 
+
 def ask(system_context, text):
     resp = get_resp(system_context, text)
     return resp
