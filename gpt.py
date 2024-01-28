@@ -6,7 +6,6 @@ def get_resp(system_context, text):
         model=g4f.models.gpt_35_long,
         messages=[{"role": "user", "content": system_context}, {"role": "user", "content": text}],
     )
-    print(response)
     return response
 
 
