@@ -33,7 +33,7 @@ class Message:
         self.bot.vk.messages.send(
             peer_id=chat,
             random_id=random.randint(-2147483648, 2147483647),
-            message=text,
+            message=text[:4000],
             **kwargs
         )
 
