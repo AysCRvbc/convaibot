@@ -131,6 +131,8 @@ def conv_answer(msg: vklib.Message):
     center = center[:20]
     messages = messages[-20:]
 
+    print(center, messages)
+
     if len(center) == 0:
         msg.answer("Пользователь не найден")
         return
