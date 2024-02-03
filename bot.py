@@ -141,8 +141,8 @@ def conv_answer(msg: vklib.Message):
 
     try:
         answer = prompts.impersonate(messages, center, nickname)
-    except:
-        msg.answer("Мне лень читать, давайте позже")
+    except Exception as f:
+        msg.answer(f"Мне лень читать, давайте позже (а всё потому что {f})")
         return
 
     if "<ans>" not in answer:
